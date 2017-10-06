@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Threading;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace LetMeWork
@@ -12,11 +11,13 @@ namespace LetMeWork
         private const string StopText = "&Stop";
         private const string StartText = "&Start";
 
-        private Thread _thread;
+        private readonly ProcessKiller[] _killers;
         private bool _running;
 
-        public LetMeWork()
+        public LetMeWork(IEnumerable<string> processes)
         {
+            _killers = processes.Select(process => new ProcessKiller(process, Notify)).ToArray();
+
             InitializeComponent();
 
             notifyIcon.Icon = SystemIcons.Shield;
@@ -34,105 +35,42 @@ namespace LetMeWork
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Stop();
+            ForAll(killer => killer.Stop());
             Application.Exit();
         }
 
         private void killItToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (_running)
-            {
-                _thread.Interrupt();
-            }
-            else
-            {
-                KillIt();
-            }
+            ForAll(killer => killer.KillIt());
         }
 
         private void startStopToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (_running)
             {
-                Stop();
+                ForAll(killer => killer.Stop());
+                startStopToolStripMenuItem.Text = StopText;
             }
             else
             {
-                Start();
+                ForAll(killer => killer.Start());
+                startStopToolStripMenuItem.Text = StopText;
             }
+            _running = !_running;
         }
 
-        private void Start()
+        private void Notify(ProcessKiller killer, string message)
         {
-            _running = true;
-            _thread = new Thread(Run);
-            _thread.Start();
-            startStopToolStripMenuItem.Text = StopText;
+            notifyIcon.BalloonTipText = $"{killer.ProcessName} {message}";
+            notifyIcon.ShowBalloonTip(1000);
         }
 
-        private void Stop()
+        private void ForAll(Action<ProcessKiller> action)
         {
-            if (!_running) return;
-
-            _running = false;
-            _thread.Interrupt();
-            _thread.Abort();
-            startStopToolStripMenuItem.Text = StartText;
-        }
-
-        private void Run()
-        {
-            const int tenSeconds = 10 * 1000;
-            const int increment = tenSeconds;
-            const int oneMinute = 60 * 1000;
-            const int fiveMinutes = 5 * 60 * 1000;
-
-            var sleep = tenSeconds;
-            while (_running)
+            foreach (var killer in _killers)
             {
-                var justKilledIt = KillIt();
-
-                if (justKilledIt)
-                {
-                    sleep = tenSeconds;
-                }
-                else
-                {
-                    sleep = sleep + increment;
-                    if (sleep > oneMinute)
-                    {
-                        sleep = fiveMinutes;
-                    }
-                }
-
-                try
-                {
-                    Thread.Sleep(sleep);
-                }
-                catch (ThreadInterruptedException)
-                {
-                }
+                action(killer);
             }
-        }
-
-        private bool KillIt()
-        {
-            var justKilledIt = false;
-            const string processName = "mcshield";
-            var processes = Process.GetProcessesByName(processName);
-            var messages = new List<string>();
-            foreach (var process in processes)
-            {
-                process.Kill();
-                messages.Add($"Killed process {process.Id} {DateTime.Now}");
-                justKilledIt = true;
-            }
-            if (justKilledIt)
-            {
-                notifyIcon.BalloonTipText = string.Join("\r\n", messages);
-                notifyIcon.ShowBalloonTip(1000);
-            }
-            return justKilledIt;
         }
     }
 }
