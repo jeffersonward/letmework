@@ -16,6 +16,11 @@ namespace LetMeWork
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            if (args.Length == 0)
+            {
+                args = new[] { "macmnsvc", "macompatsvc", "masvc", "mcshield", "mctray", "mfecanary", "mfeesp", "mfemactl", "mfetp" };
+            }
             Application.Run(new LetMeWork(args));
         }
     }
