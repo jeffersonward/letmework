@@ -49,7 +49,7 @@ namespace LetMeWork
             if (_running)
             {
                 ForAll(killer => killer.Stop());
-                startStopToolStripMenuItem.Text = StopText;
+                startStopToolStripMenuItem.Text = StartText;
             }
             else
             {
