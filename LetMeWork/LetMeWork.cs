@@ -61,8 +61,11 @@ namespace LetMeWork
 
         private void Notify(ProcessKiller killer, string message)
         {
-            notifyIcon.BalloonTipText = $"{killer.ProcessName} {message}";
-            notifyIcon.ShowBalloonTip(1000);
+            if (notifyToolStripMenuItem.Checked)
+            {
+                notifyIcon.BalloonTipText = $@"{killer.ProcessName} {message}";
+                notifyIcon.ShowBalloonTip(1000);
+            }
         }
 
         private void ForAll(Action<ProcessKiller> action)
