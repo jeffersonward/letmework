@@ -19,7 +19,11 @@ namespace LetMeWork
 
             if (args.Length == 0)
             {
+#if DEBUG
                 args = new[] { "macmnsvc", "macompatsvc", "masvc", "mcshield", "mctray", "mfecanary", "mfeesp", "mfemactl", "mfetp" };
+# else
+                args = new[] { "mcshield" };
+#endif
             }
             Application.Run(new LetMeWork(args));
         }
